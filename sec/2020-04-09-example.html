@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+
+<head>
+	<link rel="stylesheet" href="../css/base.css"></link>
+	<link rel="stylesheet" href="../css/prism.css"></link>
+
+	<script src="../js/jquery-3.4.1.min.js"></script>
+	<script src="../js/base.js"></script>
+	<script src="../js/prism.js"></script>
+</head>
+
+<body>
+	<h1 id="website-title"><a id=website-title href=../index.html>sicboy</a></h1>
+	<pre><code class="language-c">
+	#include &lt;stdio.h&gt;
+	#include &lt;stdlib.h&gt;
+
+	struct Car {
+	    int year;
+	    char * name;
+	};
+
+	int main(){
+	    struct Car *car;
+
+	    car = malloc(sizeof(struct Car));
+	    car->name = "Honda";
+	    car->year = 1997;
+
+	    printf("Size of Car: %d\n", sizeof(struct Car));
+	    printf("Size of char *: %d\n", sizeof(char *));
+	    printf("Size of int: %d\n", sizeof(int));
+
+	}
+	</code></pre>
+	
+	<pre><code class="language-python">
+	#---------------- Encryption code ----------------#
+	if enc:
+		blocks = []
+		i,j = 0,0
+
+		# Parse text into blocks
+		while (i < len(txt)):
+			if j % 2 == 0:
+				blocks.append( str(ord(txt[i]))      )
+				blocks.append( str(ord(txt[i+1]))    )
+				blocks.append( str(ord(txt[i+2]))[0] )
+				i += 2
+			else:
+				blocks.append( str(ord(txt[i]))[1:] )
+				blocks.append( str(ord(txt[i+1]))   )
+				blocks.append( str(ord(txt[i+2]))   )
+				i += 3
+			j += 1
+
+		i = 0
+
+		# Preform encryption algorithm on each block
+		while (i < len(blocks)):
+			leading_zeros = 0
+			num = blocks[i] + blocks[i+1] + blocks[i+2]
+
+			# Leading zeros get lost during encryption process
+			if (num[0] == "0"):
+				leading_zeros += 1
+			if (num[0] == "0" and num[1] == "0"):
+				leading_zeros += 1
+
+			num = int(num) * key + key
+			encrypted_text = leading_zeros * "*" + str(num)
+			print(encrypted_text),
+
+			i += 3
+		print ""
+
+	#---------------- Decryption code ----------------#
+	else:
+		ascii_str = ""
+		blocks = txt.split()
+
+		for block in blocks:
+
+			i = 0
+			while (i < len(block)):
+				if block[i] == '*':
+					ascii_str += "0"
+					i += 1
+				else:
+					break
+
+			block = block[i:]
+			num = (int(block) - key) / key
+			ascii_str += str(num)
+
+		j = 0
+		decrypted_str = ""
+		while (j < len(ascii_str)):
+			# Matching 3 digit ASCII code
+			if (ascii_str[j] == '1'):
+				decrypted_str += chr(int(ascii_str[j]+ascii_str[j+1]+ascii_str[j+2]))
+				j += 3
+			# Matching 2 digit ASCII code
+			else:
+				decrypted_str += chr(int(ascii_str[j]+ascii_str[j+1]))
+				j += 2
+
+		print(decrypted_str)
+	</code></pre>
+</body>
+</html>

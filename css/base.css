@@ -1,0 +1,126 @@
+html {
+	background-color: #15171A;
+	font : 500 16px/1.2 "Varela Round", sans-serif
+}
+
+hr {
+	border-top: 1px solid #DAE4ED;
+}
+
+body {
+	color: #DAE4ED;
+	width: 70%;
+	max-width: 1500px;
+	margin: auto;
+}
+
+table {
+	border: none; border-collapse: collapse;
+}
+
+table td:first-child, table td:nth-child(4) {
+	border-left: none;
+}
+
+table .opinion-text {
+	display: none;
+	font-style: italic;
+}
+
+a {
+	color: #AEAEAE;
+}
+
+a:hover {
+	cursor:pointer;
+}
+
+.navigation-links, .sub-links{
+	display: table;
+	width: 100%;
+  table-layout: fixed;
+}
+
+.sub-links a {
+	padding-top: 15px;
+	padding-bottom: 15px;
+	font-weight: bold;
+}
+
+.navigation-links a {
+	display: table-cell;
+	text-align: center;
+	text-decoration: none;
+	color: #616161;
+	font-size: 25px;
+	font-weight: 500;
+}
+
+.sub-links a {
+	display: table-cell;
+	text-align: center;
+	text-decoration: none;
+	color: #616161;
+	font-size: 17px;
+}
+
+.navigation-links a:onhover {
+	font-weight: bold;
+}
+
+.content-pane {
+	display: none;
+}
+
+#literature-table td, #movies-table td  {
+	padding: 0.5em;
+	padding-right: 1em;
+	padding-bottom: 40px;
+}
+
+#literature-table td:first-child {
+	width: 35%;
+	vertical-align: top;
+}
+
+#literature-pane, #about-pane {
+	margin-top: 27px;
+}
+
+#movies-table td:first-child {
+	width: 40%;
+}
+#movies-table td:nth-child(2){
+	vertical-align: top;
+}
+
+#literature-table span, #movies-table span {
+	white-space: pre-line;
+	display: inline-block;
+	margin-left: 10px;
+}
+
+#literature-table img, #movies-table img {
+	height: 113px;
+}
+
+#security-pane ul {
+	padding-left: 0px;
+}
+
+#security-pane li {
+	margin-bottom: 15px;
+	text-decoration: none;
+	list-style-type: '';
+}
+
+#security-sub-links {
+	margin-bottom: 25px;
+}
+
+#website-title {
+	text-align: center;
+	margin-bottom: 50px;
+	color: #616161;
+	text-decoration: none;
+}
