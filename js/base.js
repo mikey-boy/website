@@ -19,10 +19,10 @@ $(document).ready(function() {
     });
   }
 
-  // ------------------ Security content ------------------- //
+  // ------------------ Coding content ------------------- //
 
   function showCategory(category) {
-    $("#security-pane ul li").each(function(){
+    $("#coding-pane ul li").each(function(){
       if (category == "all" || category == "" || $(this).attr('cat') == category) {
         $(this).show();
       } else {
@@ -32,8 +32,8 @@ $(document).ready(function() {
   }
 
   function highlightCatagory(category) {
-    $("#security-sub-links a").css("color", "#616161");
-    $("#security-sub-links a").each(function(){
+    $("#coding-sub-links a").css("color", "#616161");
+    $("#coding-sub-links a").each(function(){
       if ($(this).attr('href').includes(category)) {
         $(this).css("color", "#AEAEAE");
       }
@@ -64,7 +64,7 @@ $(document).ready(function() {
   }
 
   function showSubTab(tab, subtab) {
-    if (tab == "security") {
+    if (tab == "coding") {
       showCategory(subtab);
     } else if (tab == "movies") {
       showGenre(subtab);
@@ -72,7 +72,7 @@ $(document).ready(function() {
   }
 
   function highlightSubTab(tab, subtab) {
-    if (tab == "security") {
+    if (tab == "coding") {
       highlightCatagory(subtab);
     } else if (tab == "movies") {
       highlightGenre(subtab);

@@ -104,17 +104,17 @@ a:hover {
 	height: 113px;
 }
 
-#security-pane ul {
+#coding-pane ul {
 	padding-left: 0px;
 }
 
-#security-pane li {
+#coding-pane li {
 	margin-bottom: 15px;
 	text-decoration: none;
 	list-style-type: '';
 }
 
-#security-sub-links {
+#coding-sub-links {
 	margin-bottom: 25px;
 }
 
