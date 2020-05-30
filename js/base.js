@@ -14,7 +14,7 @@ $(document).ready(function() {
     $("#movie-sub-links a").css("color", "#616161");
     $("#movie-sub-links a").each(function(){
       if ($(this).attr('href').includes(genre)) {
-        $(this).css("color", "#AEAEAE");
+        $(this).css("color", "#c5c8c6");
       }
     });
   }
@@ -35,7 +35,7 @@ $(document).ready(function() {
     $("#coding-sub-links a").css("color", "#616161");
     $("#coding-sub-links a").each(function(){
       if ($(this).attr('href').includes(category)) {
-        $(this).css("color", "#AEAEAE");
+        $(this).css("color", "#c5c8c6");
       }
     });
   }
@@ -58,7 +58,7 @@ $(document).ready(function() {
     $(".navigation-links a").each(function() {
       if ($(this).attr('href').includes(tab)) {
         $(this).css("font-weight", "bold");
-        $(this).css("color", "#AEAEAE");
+        $(this).css("color", "#c5c8c6");
       }
     });
   }

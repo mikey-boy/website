@@ -1,6 +1,13 @@
 html {
-	background-color: #15171A;
-	font : 500 16px/1.2 "Varela Round", sans-serif
+	background-color: #1d1f21;
+	/*font : 500 16px/1.2 "Varela Round", sans-serif;*/
+	font-size: 16px;
+	font-weight: 500;
+	font-family: Liberation Sans, sans-serif;
+}
+
+html.article {
+	line-height: 1.7;
 }
 
 hr {
@@ -8,7 +15,7 @@ hr {
 }
 
 body {
-	color: #DAE4ED;
+	color: #c5c8c6;
 	width: 70%;
 	max-width: 1500px;
 	margin: auto;
@@ -27,9 +34,14 @@ table .opinion-text {
 	font-style: italic;
 }
 
-a {
-	color: #AEAEAE;
+a, b {
+	color: #e0e0e0;
 }
+
+h2 {
+	font-weight: 400;
+}
+
 
 a:hover {
 	cursor:pointer;
@@ -104,17 +116,17 @@ a:hover {
 	height: 113px;
 }
 
-#coding-pane ul {
+#security-pane ul {
 	padding-left: 0px;
 }
 
-#coding-pane li {
+#security-pane li {
 	margin-bottom: 15px;
 	text-decoration: none;
 	list-style-type: '';
 }
 
-#coding-sub-links {
+#security-sub-links {
 	margin-bottom: 25px;
 }
 
