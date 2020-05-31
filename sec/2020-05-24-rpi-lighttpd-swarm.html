@@ -15,16 +15,57 @@
 	<h1 id="website-title"><a id=website-title href=../index.html>slomo</a></h1>
 
 	<h2>Description</h2>
-	<body>This guide explains how to set up a <a href="https://www.lighttpd.net/">lighttpd webserver</a> using Docker swarm and few raspberry pis. The inspiration for this project comes from this <a href="https://github.com/ahaurw01/haurwitz.com/blob/master/archives/posts/2017-06-10_rpi-swarm.md">guide</a>, and although my setup is similar there is a few things I did differently that might be of interest.</body>
+	<p>This guide explains how to set up a <a href="https://www.lighttpd.net/">lighttpd webserver</a> using Docker swarm and few raspberry pis. The inspiration for this project comes from this <a href="https://github.com/ahaurw01/haurwitz.com/blob/master/archives/posts/2017-06-10_rpi-swarm.md">guide</a>, and although my setup is similar there is a few things I did differently that might be of interest.</p>
 
 	<h2>Equipment</h2>
 	<ul>
 		<li><b>Raspberry Pis</b> - I have three Raspberry Pi 4's (Model B). They are quite speedy for my purposes. I got them from <a href="https://www.buyapi.ca/">BuyaPi</a>.</li>
-		<li><b>Gigabit Ethernet Network Switch</b> - The Raspberry Pi 4 (Model B) has a Gigabit Ethernet Adapter so this makes sense. However older models have a lower bandwidth so this could be overkill depending on what you've got</li>
-		<li><b>CAT6 Ethernet cable</b> - Atleast one more than the amount of Pis you have. Mine are 1 ft in length and they are still a bit messy near my router.</li>
-		<li><b>Raspberry Pi Tower</b> - <a href="https://www.amazon.ca/gp/product/B07MW3GM1T/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1">This tower</a> is nice. It's relatively sturdy and the setup is easy. Plus it's got a few fans.s</li>
+		<li><b>Gigabit Ethernet Network Switch</b> - The Raspberry Pi 4 (Model B) has a Gigabit Ethernet Adapter so this makes sense. Older models have a lower bandwidth so this could be overkill depending on what you've got</li>
+		<li><b>CAT6 Ethernet cable</b> - Atleast one more than the amount of Pis you have (if you are planning on using an ethernet switch). Mine are 1 ft in length and they are still a bit messy near my router.</li>
+		<li><b>MicroSD cards</b> - It's easier to flash these cards if they are all the same size. I got three 16G cards myself.</li>
+		<li><b>Raspberry Pi Tower</b> - <a href="https://www.amazon.ca/gp/product/B07MW3GM1T/ref=ppx_od_dt_b_asin_title_s00?ie=UTF8&psc=1">This tower</a> is nice. It's relatively sturdy and the setup is easy. Plus it's got a few fans.</li>
+		<li><b>Power Supply *</b> - I purchased one of the <a href="https://www.raspberrypi.org/products/type-c-power-supply/">recommended power supply</a>. The amount of power needed varies by model.
 	</ul>
-	<body>A note on power supplies. </body>
+	<p>* A note on power supplies: The Raspberry Pi 4 requires a higher voltage than previous models, which is more than what you would get from a standard USB adapter. In my case, I purchased one <a href="https://www.raspberrypi.org/products/type-c-power-supply/">recommended power supply</a> and used a phone charger for the other two devices. This may not work for you though, and be sure to inspect the power output <i>before</i> plugging in your Pi. If you have any external devices connected to your Pi (i.e. external hardrive), keep in mind that this may need additional power from the device in order to operate.</p>
+
+	<h2>Setup</h2>
+	<p>If the cards are the same size, you can run through the entire setup on one card, and then flash the data to the other devices. If cards are of different sizes, this may still be possible (by using the smallest card to setup) but you would likely need to alter the partition table in order to utilize all the space for the other devices.</p>
+	<h3>Install the OS</h3>
+	<p>You can download the <a href="https://www.raspberrypi.org/downloads/raspbian/">OS image</a> and then follow the <a href="https://www.raspberrypi.org/documentation/installation/installing-images/README.md">installation guide</a>.</p>
+	<h3>Connect to the device</h3>
+	<p>First enable ssh as described in <a href="https://howchoo.com/g/ote0ywmzywj/how-to-enable-ssh-on-raspbian-without-a-screen">this article</a>. Then insert the microSD card into the Pi and power it up. Assuming that you connected your network components correctly, you can use a tool like nmap to find the IP address that was assigned to the device.</p>
+	<pre><code class="language-bash"># Simple ping scan on local network (192.168.0.115/24). Use 'ip link addr' or another tool to find the IP range your local network is on.
+sudo nmap -sn 192.168.0.115/24
+
+# If device name is not appearing, this will scan for devices with port 22 (SSH) open
+sudo nmap -sT -p 22 192.168.0.115/24</code></pre>
+	<p>Once you've figured out the IP address you can go ahead and connect using ssh. Default credentials: username=pi, password=raspberry.</p>
+	<h3>Base Image Configurations</h3>
+	<p><p>As stated earlier, it's easier if you do some of the configuration on one of the microSD cards, then flash the others to avoid duplicated effort.</p>
+	<pre><code class="language-bash"># First, from your local machine, copy over your SSH keys
+
+# If you don't already have key on your machine generate a new one.
+# This will place the newly generated key in the default SSH directory (~/.ssh/)
+ssh-keygen -t rsa -b 4096
+
+# Add your key to the pi's authorized_keys file (also in ~/.ssh/ folder on the pi)
+ssh-copy-id pi@192.168.0.100
+
+# SSH onto the Pi and update the system
+# If you did the previous step correctly you shouldn't need to enter a password
+ssh pi@192.168.0.100
+sudo apt update && sudo apt upgrade
+
+# Install docker. This downloads an installation script an runs it
+curl -sSL https://get.docker.com | sh
+
+# (Optional) Add user to the docker group. This allows the pi user to execute docker commands without needing 'sudo'
+sudo usermod -aG docker pi
+
+# Check if installation was successful
+(sudo) docker version 
+</code></pre>
+
 
 </body>
 </html>
