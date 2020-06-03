@@ -1,13 +1,5 @@
 html {
 	background-color: #1d1f21;
-	/*font : 500 16px/1.2 "Varela Round", sans-serif;*/
-	font-size: 16px;
-	font-weight: 500;
-	font-family: Liberation Sans, sans-serif;
-}
-
-html.article {
-	line-height: 1.7;
 }
 
 hr {
@@ -17,8 +9,13 @@ hr {
 body {
 	color: #c5c8c6;
 	width: 70%;
+	min-width: 800px;
 	max-width: 1500px;
 	margin: auto;
+
+	font-size: 16px;
+	font-weight: 500;
+	font-family: Liberation Sans, sans-serif;
 }
 
 table {
@@ -36,6 +33,10 @@ table .opinion-text {
 
 a, b {
 	color: #e0e0e0;
+}
+
+html.article {
+	line-height: 1.7;
 }
 
 h2 {
@@ -73,7 +74,6 @@ a:hover {
 	text-align: center;
 	text-decoration: none;
 	color: #616161;
-	font-size: 17px;
 }
 
 .navigation-links a:onhover {
@@ -92,6 +92,7 @@ a:hover {
 
 #literature-table td:first-child {
 	width: 35%;
+	min-width: 300px;
 	vertical-align: top;
 }
 
@@ -100,8 +101,10 @@ a:hover {
 }
 
 #movies-table td:first-child {
-	width: 40%;
+	width: 45%;
+	min-width: 350px;
 }
+
 #movies-table td:nth-child(2){
 	vertical-align: top;
 }
