@@ -18,6 +18,10 @@ body {
 	font-family: Liberation Sans, sans-serif;
 }
 
+footer {
+	margin-top: 100px;
+}
+
 table {
 	border: none; border-collapse: collapse;
 }
