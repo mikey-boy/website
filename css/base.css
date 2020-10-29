@@ -100,7 +100,7 @@ a:hover {
 	vertical-align: top;
 }
 
-#literature-pane, #about-pane {
+#coding-pane, #literature-pane, #about-pane{
 	margin-top: 27px;
 }
 
@@ -142,4 +142,17 @@ a:hover {
 	margin-bottom: 50px;
 	color: #616161;
 	text-decoration: none;
+}
+
+#coding-pane.content-pane {
+	margin-top: 10
+}
+
+#coding-pane.content-pane a {
+	text-decoration: none;
+
+}
+
+#coding-pane.content-pane a:hover {
+	text-decoration: underline;
 }
