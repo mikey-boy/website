@@ -43,9 +43,9 @@ html.article {
 	line-height: 1.7;
 }
 
-h2 {
+/* h2 {
 	font-weight: 400;
-}
+} */
 
 
 a:hover {
@@ -55,7 +55,7 @@ a:hover {
 .navigation-links, .sub-links{
 	display: table;
 	width: 100%;
-  table-layout: fixed;
+  	table-layout: fixed;
 }
 
 .sub-links a {
@@ -86,6 +86,18 @@ a:hover {
 
 .content-pane {
 	display: none;
+}
+
+body.post{
+	max-width: 1000px;
+}
+
+body.post h2{
+	margin-top: 50px;
+}
+
+body.post h3{
+	margin-top: 20px;
 }
 
 #literature-table td, #movies-table td  {
@@ -123,12 +135,15 @@ a:hover {
 	height: 113px;
 }
 
-#security-pane ul {
+#coding-pane
+
+#coding-pane ul {
 	padding-left: 0px;
 }
 
-#security-pane li {
-	margin-bottom: 15px;
+#coding-pane li {
+	margin-left: 10px;
+	margin-bottom: 10px;
 	text-decoration: none;
 	list-style-type: '';
 }

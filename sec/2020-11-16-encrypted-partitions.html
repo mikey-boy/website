@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+
+<head>
+	<link rel="stylesheet" href="../css/base.css"></link>
+	<link rel="stylesheet" href="../css/prism.css"></link>
+
+	<script src="../js/jquery-3.4.1.min.js"></script>
+	<script src="../js/base.js"></script>
+	<script src="../js/prism.js"></script>
+</head>
+
+<body class=post>
+	<h1 id="website-title"><a id=website-title href=../index.html>slomo</a></h1>
+	<h2>Resizing LUKS encrypted partitions</h2>
+	<p>A few months ago I decided to try out Arch Linux and in the process I gave
+	LUKS encryption a try. I decided to encrypt 2 seperate partitions, /home
+	and /, while keeping /boot unencrypted. I remember looking around for a
+	reasonable amount of space to allocate for each and I somehow ended up with
+	15G for / and 105G for /home. A bit skewed I know, but I reasoned that Arch is
+	super tiny and my system is always clean af ;) As you could imagine I ran into
+	the following issue some time after when running a system update.</p>
+	<img src="../img/posts/partitioning/partition-full.png" alt="">
+
+	<h2>Resizing/Recreating</h2>
+	<p>Here is the standard disclaimer you see when you look at any partitioning
+	tutorial. <b>BACK YOUR SYSTEM UP.</b> Also keep in mind that I have only tried
+	this on my machine, the process may be a bit different for you. Now
+	that's out of the way I'll show you what I did. Lets first take a look at
+	my partition table.</p>
+	<img src="../img/posts/partitioning/partition-scheme.jpg" alt="">
+	<p>So I wanted to extend my root partition (nvme0n1p6/cryptroot) atleast
+		10G and shrink my home partition (nvme0n1p7/crypthome) to accomplish this. I
+		began to read around about resizing and determined that it is probably easier
+		to extend an encrpted partition rather than shrink it. I also took a look at what
+		<a href="https://gitlab.com/cryptsetup/cryptsetup/-/wikis/FrequentlyAskedQuestions#2-setup">Luks FAQ (section 2.15)</a>
+		had to say about it. In the end I decided that I will recreate my home
+		partition to shrink it and then extend my root partition after.</p>
+
+	<h2>Shrinking home paritition</h2>
+	<h3>Step 1: Create a Live CD and Boot into it</h3>
+	<p>I had an Arch live CD on hand so I just used that. Using a live CD to create
+		your backups is a good idea because it allows you to backup partitions that are
+		unmounted (and therefore not changing)</p>
+
+	<h3>Step 2: Backup the partitions</h3>
+	<p>To backup an entire partition you can do:</p>
+	<pre><code class="language-bash">$ dd if=/dev/nvme0n1p6 of=/external/root-backup.img</code></pre>
+	<p>The problem with dd is that empty space is also included in the img file.
+		This was fine for my root partition, but not for my home partition which
+		I needed to shrink. Instead I did:</p>
+	<pre><code class="language-bash">$ tar --acls --xattrs -cpvf /external/home-backup.tar /home</code></pre>
+	<p>I actually mounted the home partition before doing this from the live CD
+		and it worked fine.</p>
+
+	<h3>Step 3: Change the current partition scheme</h3>
+	<p>I opened the target drive using fdisk. You can shrink a partition by
+		deleting it and creating a new partition with a smaller size. In my case
+		I did exactly that, but I needed to start my home partition 10G after
+		its original start point. This would allow room for the root partition
+		to be extended as I wanted (which you can see if you refer to my drive
+		layout above).
+
+		To do this I needed to calculate which sector to start from. Each sector
+		is 512 bytes which is equivalent to 1/2 KB's. Using that logic I did the
+		calculation 2 (1KB) * 1024 (KB/MB) * 1024 (MB/GB) * 10 (GB's needed).
+		(result) + (original parition start sector) = (desired offset). In my
+		case that was sector 263243776.</p>
+
+	<h3>Step 4: Create a new Luks Container</h3>
+	<p>At this point you're fully committed to seeing this through. I essentially
+		followed the steps outlined on the
+		<a href="https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_a_non-root_file_system#Partition">Arch wiki</a>.
+		I also erased my disk as suggested. After that I created my new luks
+		container and created a new ext4 file system.</p>
+
+	<h3>Step 5: Mount the file system, restore the files</h3>
+	<p>At this point I remounted the filesystem and restored the files. It turns
+		out that in this step I ended up nesting my home folder in /home/mnt/home
+		because of how I mounted, which I realized after rebooting my system.
+		I wasn't able to log in to my account, but I was able to log into the
+		root account and fix the nested directories to resolve the issue.</p>
+	<pre><code class="language-bash">mount /dev/nvme0n1p7 /mnt/home
+$ cd /mnt/home
+$ tar --acls --xattrs -xpf /external/home-backup.tar</code></pre>
+
+	<h3>Step 6: Update /etc/fstab and /etc/cryptab</h3>
+	<p>Since I leverage both of these files to unlock and mount my home partition,
+		I needed to update them with the new UUIDs that were assigned to the
+		mapped and encrypted partitions respectively. You do can find these UUID's
+		by running `blkid` with the encrypted device unlocked.</p>
+<pre><code class="language-bash">$ blkid
+...
+/dev/nvme0n1p7: UUID="f92f3d51-ee2d-4624-b7d4-d2687dff843a" TYPE="crypto_LUKS" PARTUUID="..."
+/dev/mapper/crypthome: UUID="5ec60c1b-1293-4fe6-86b0-2f0c14bc3875" BLOCK_SIZE="4096" TYPE="ext4"</pre></code>
+
+	<pre><code class="language-bash"># /etc/cryptab
+# Use UUID of encrypted partition
+crypthome       UUID=f92f3d51-ee2d-4624-b7d4-d2687dff843a    /etc/luks-passwd</pre></code>
+
+<pre><code class="language-bash"># /etc/fstab
+# Use UUID of mapped partition (i.e. /dev/mapper/crypthome)
+UUID=5ec60c1b-1293-4fe6-86b0-2f0c14bc3875       /home           ext4            rw,relatime     0 2</pre></code>
+
+	<h2>Extending the root partition</h2>
+	<p>I pretty much just follow the steps outline in
+		<a href="https://blog.tinned-software.net/increase-the-size-of-a-luks-encrypted-partition/">this tutorial</a>,
+		but I will include them here for completeness sake.</p>
+
+	<h3>Step 1: Increase the size of the underlying partition</h3>
+	<p>I used fdisk here to delete and recreate the root partition. During
+		the recreation step fdisk might ask you whether you want to remove the
+		Luks header. You should answer <b>No</b>. Then fdisk will attempt to
+		allocate the largest chunk of available memory which is exactly what I
+		want.</p>
+
+	<h3>Step 2: Unlock encrypted volume</h3>
+	<p>Like before, unlock your encrypted volume in order to access the underlying
+		filesystem.</p>
+	<pre><code class="language-bash">$ cryptsetup open /dev/nvme0n1p6 cryptroot</pre></code>
+
+	<h3>Step 3: Increase the size of the encrypted container</h3>
+	<p>Like fdisk, cryptsetup will attempt to allocate as much space on the
+		partition as is available, by default. -v provides an output message if
+		the command is successful.</p>
+	<pre><code class="language-bash">$ cryptsetup resize cryptroot -v</pre></code>
+
+	<h3>Step 4: Check the underlying filesystem</h3>
+	<p>I threw this command in there because it's probably better to clean up before
+		resizing the filesystem. I think `resize2fs` will ask you to run this before
+		anyways. -f forces the check even if the filesystem seems clean.</p>
+	<pre><code class="language-bash">$ e2fsck -f /dev/mapper/cryptroot</pre></code>
+
+	<h3>Step 5: Extend the filesystem</h3>
+	<p>Now its time to extend the filesystem underneath. Like the other commands,
+		by default it will allocate as much space as possible. After this the
+		process is complete!</p>
+	<pre><code class="language-bash">$ resize2fs -p /dev/mapper/cryptroot</pre></code>
+</body>
+<footer></footer>
+</html>
