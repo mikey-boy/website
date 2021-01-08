@@ -13,9 +13,10 @@ body {
 	max-width: 1500px;
 	margin: auto;
 
-	font-size: 16px;
-	font-weight: 500;
-	font-family: Liberation Sans, sans-serif;
+	font-family: monospace;
+    font-size:1rem;
+    line-height:1.54;
+    letter-spacing:-.02em;
 }
 
 footer {
@@ -42,11 +43,6 @@ a, b {
 html.article {
 	line-height: 1.7;
 }
-
-/* h2 {
-	font-weight: 400;
-} */
-
 
 a:hover {
 	cursor:pointer;
@@ -93,7 +89,7 @@ body.post{
 }
 
 body.post h2{
-	margin-top: 50px;
+	margin-top: 40px;
 }
 
 body.post h3{
@@ -102,12 +98,11 @@ body.post h3{
 
 #literature-table td, #movies-table td  {
 	padding: 0.5em;
-	padding-right: 1em;
 	padding-bottom: 40px;
 }
 
 #literature-table td:first-child {
-	width: 35%;
+	width: 30%;
 	min-width: 300px;
 	vertical-align: top;
 }
@@ -117,11 +112,11 @@ body.post h3{
 }
 
 #movies-table td:first-child {
-	width: 45%;
-	min-width: 350px;
+	width: 40%;
+	min-width: 430px;
 }
 
-#movies-table td:nth-child(2){
+#movies-table td:nth-child(2), #literature-table td:nth-child(2){
 	vertical-align: top;
 }
 
@@ -132,7 +127,8 @@ body.post h3{
 }
 
 #literature-table img, #movies-table img {
-	height: 113px;
+	height: 145px;
+	width: 95px;
 }
 
 #coding-pane
@@ -142,9 +138,7 @@ body.post h3{
 }
 
 #coding-pane li {
-	margin-left: 10px;
 	margin-bottom: 10px;
-	text-decoration: none;
 	list-style-type: '';
 }
 
